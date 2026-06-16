@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#FAFAF8" />
+<title>Enfoque — Drive Sync</title>
+<style>
+  /* ============================================================
+     ENFOQUE — Organizador minimalista de Máximo (V2 Drive Sync)
+     ============================================================ */
+
+  :root {
+    --fondo: #FAFAF8;
+    --superficie: #FFFFFF;
+    --texto: #2E2E2E;
+    --texto-sec: #8A8A82;
+    --borde: #ECECE6;
+    --acento: #5B7B6F;
+    --acento-suave: rgba(91, 123, 111, 0.08);
+    --alta: #C26B5A;
+    --media: #C9A227;
+    --baja: #9BA8B0;
+    --radio: 14px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--fondo); color: var(--texto);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    max-width: 440px; margin: 0 auto; height: 100%;
+    display: flex; flex-direction: column; background: var(--fondo);
+    position: relative;
+  }
+
+  .seccion { flex: 1; overflow-y: auto; padding: 24px 16px 96px; }
+  .titulo-seccion { font-size: 28px; font-weight: 600; margin: 0; }
+  .subtitulo { font-size: 13px; color: var(--texto-sec); font-weight: 500; margin: 4px 0 0; }
+  .etiqueta-grupo { font-size: 13px; font-weight: 600; color: var(--texto-sec); margin: 24px 0 12px; }
+
+  .tarjeta {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--superficie); border: 1px solid var(--borde);
+    border-radius: var(--radio); padding: 14px 16px; margin-bottom: 8px;
+    transition: opacity .25s cubic-bezier(.33,1,.68,1);
+  }
+  .tarjeta.completada { opacity: .4; }
+  .tarjeta.completada .titulo-tarea { text-decoration: line-through; }
+
+  .punto {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; cursor: pointer; transition: transform .15s;
+  }
+  .punto:active { transform: scale(1.4); }
+  .punto.p2 { background: var(--alta); }
+  .punto.p1 { background: var(--media); }
+  .punto.p0 { background: var(--baja); }
+
+  .titulo-tarea { flex: 1; font-size: 17px; font-weight: 500; word-break: break-word; }
+  .etiqueta-lista { font-size: 11px; color: var(--texto-sec); font-weight: 500; }
+
+  .check {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid var(--borde); background: var(--superficie);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: background .18s, border-color .18s;
+  }
+  .check.on { background: var(--acento); border-color: var(--acento); }
+  .check svg { width: 15px; height: 15px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; transition: opacity .18s; }
+  .check.on svg { opacity: 1; }
+  .check.grande { width: 32px; height: 32px; }
+  .check.grande svg { width: 19px; height: 19px; }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 8px 16px; border-radius: 20px;
+    border: 1px solid var(--borde); background: var(--superficie);
+    color: var(--texto-sec); font-size: 14px; font-weight: 500;
+    white-space: nowrap; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .chip.activo { background: var(--acento); color: #fff; border-color: var(--acento); }
+
+  .barra { height: 8px; background: var(--borde); border-radius: 8px; overflow: hidden; }
+  .barra > div { height: 100%; background: var(--acento); width: 0; transition: width .4s cubic-bezier(.33,1,.68,1); }
+  .barra-texto { font-size: 13px; color: var(--texto-sec); margin-top: 8px; }
+
+  .fila-habito {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 4px; border-bottom: 1px solid var(--borde); cursor: pointer;
+  }
+  .fila-habito:last-child { border-bottom: none; }
+  .nombre-habito { flex: 1; font-size: 17px; font-weight: 500; }
+  .fila-habito.on .nombre-habito { color: var(--texto-sec); }
+  .racha { font-size: 15px; font-weight: 600; color: var(--texto-sec); }
+
+  .metrica { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+  .metrica .et { font-size: 15px; color: var(--texto-sec); }
+  .metrica .val { font-size: 20px; font-weight: 600; }
+  
+  .mensaje-cierre {
+    background: var(--acento-suave); color: var(--acento);
+    border-radius: var(--radio); padding: 16px; text-align: center;
+    font-size: 15px; font-weight: 500; margin-top: 16px;
+  }
+  textarea.reflexion {
+    width: 100%; border: 1px solid var(--borde); border-radius: var(--radio);
+    background: var(--superficie); padding: 14px 16px; resize: none;
+    font-family: inherit; font-size: 15px; line-height: 1.4; color: var(--texto); min-height: 90px;
+  }
+  textarea.reflexion:focus { outline: none; border-color: var(--acento); }
+
+  /* Botón de Drive Sincronización */
+  .btn-drive {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; background: var(--superficie); border: 1px dashed var(--borde);
+    padding: 12px; border-radius: var(--radio); cursor: pointer; margin-top: 12px;
+    font-weight: 500; font-size: 14px; color: var(--texto-sec); transition: background .15s;
+  }
+  .btn-drive.conectado { border-style: solid; border-color: var(--acento-suave); background: var(--acento-suave); color: var(--acento); }
+
+  .vacio { text-align: center; color: var(--texto-sec); font-size: 15px; margin-top: 48px; line-height: 1.5; }
+
+  .fab {
+    position: absolute; right: 20px; bottom: 84px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--acento); color: #fff; border: none;
+    font-size: 28px; line-height: 1; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(91,123,111,.35);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  nav.barra-inferior { display: flex; background: var(--superficie); border-top: 1px solid var(--borde); height: 64px; flex-shrink: 0; }
+  nav.barra-inferior button {
+    flex: 1; border: none; background: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; color: var(--texto-sec); font-size: 11px; font-weight: 500; transition: color .15s;
+  }
+  nav.barra-inferior button.activo { color: var(--acento); }
+  nav.barra-inferior svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: none; align-items: flex-end; justify-content: center; z-index: 50; }
+  .overlay.abierto { display: flex; }
+  .hoja { background: var(--superficie); width: 100%; max-width: 440px; border-radius: 20px 20px 0 0; padding: 20px 16px; animation: subir .2s ease-out; }
+  @keyframes subir { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+  .hoja input { width: 100%; border: none; font-size: 17px; font-family: inherit; color: var(--texto); padding: 4px 0; }
+  .hoja input:focus { outline: none; }
+  .hoja .acciones { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .hoja .prio-select { display: flex; gap: 8px; }
+  .hoja .prio-select .punto { width: 18px; height: 18px; opacity: .35; transition: opacity .15s, transform .15s; }
+  .hoja .prio-select .punto.sel { opacity: 1; transform: scale(1.15); }
+  .btn-texto { background: none; border: none; color: var(--acento); font-weight: 600; font-size: 16px; cursor: pointer; font-family: inherit; }
+
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <main class="seccion" id="vista"></main>
+  <button class="fab" id="fab" onclick="App.abrirAgregar()">+</button>
+
+  <nav class="barra-inferior" id="nav">
+    <button data-tab="hoy" onclick="App.irA('hoy')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>Hoy
+    </button>
+    <button data-tab="semana" onclick="App.irA('semana')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>Semana
+    </button>
+    <button data-tab="habitos" onclick="App.irA('habitos')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Hábitos
+    </button>
+    <button data-tab="aprender" onclick="App.irA('aprender')">
+      <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.7-1 1.2-1 2.5H9c0-1.3-.3-1.8-1-2.5A6 6 0 0 1 12 3z"/></svg>Aprender
+    </button>
+    <button data-tab="revision" onclick="App.irA('revision')">
+      <svg viewBox="0 0 24 24"><path d="M4 19V5M4 17l5-5 4 3 6-7M19 8V5h-3"/></svg>Revisión
+    </button>
+  </nav>
+</div>
+
+<div class="overlay" id="overlay" onclick="App.cerrarSiFuera(event)">
+  <div class="hoja">
+    <input id="inputAgregar" type="text" autocomplete="off" />
+    <div class="acciones">
+      <div class="prio-select" id="prioSelect"></div>
+      <button class="btn-texto" id="btnAgregar">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+
+<script>
+/* ================================================================
+   CONFIGURACIÓN INDIVIDUAL DE CREDENCIALES (GOOGLE CLOUD)
+   ================================================================ */
+const CLIENT_ID = '731464117269-e99apbudrbk6ue6967g3q9j286dtcbvp.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyDjqFuzDM7syIx1Lkg3-p0qxTFUhT2z490';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+
+let tokenClient;
+let gapiIniciado = false;
+let cuentaConectada = false;
+let googleFileId = null;
+
+/* ================================================================
+   DATOS INTERNOS (LOCALSTORAGE + DRIVE COMPLEMENTO)
+   ================================================================ */
+const Datos = (() => {
+  const CLAVE = 'enfoque_v1';
+  let db;
+
+  function semilla() {
+    const listas = ['Auto','Dinero / Habilidades','IA','PAES','Salud y hábitos','Música','Casa y responsabilidad']
+      .map((nombre, i) => ({ id: i + 1, nombre, esSistema: true, orden: i }));
+    const habitos = ['Ejercicio','Lectura','Estudio PAES','Tiempo sin celular']
+      .map((nombre, i) => ({ id: i + 1, nombre, orden: i }));
+    return { listas, tareas: [], habitos, registros: [], items: [], reflexiones: {}, seq: 100, ultimaMod: 0 };
+  }
+
+  function cargar() {
+    try {
+      const crudo = localStorage.getItem(CLAVE);
+      db = crudo ? JSON.parse(crudo) : semilla();
+    } catch (e) { db = semilla(); }
+  }
+
+  function guardar(evitarSubida = false) {
+    db.ultimaMod = Date.now();
+    localStorage.setItem(CLAVE, JSON.stringify(db));
+    if (!evitarSubida && cuentaConectada) {
+      SyncDrive.subirDatos();
+    }
+  }
+
+  cargar();
+  return {
+    get: () => db,
+    setTodo: (nuevoDb) => { db = nuevoDb; localStorage.setItem(CLAVE, JSON.stringify(db)); },
+    guardar,
+    nuevoId() { return ++db.seq; }
+  };
+})();
+
+/* ================================================================
+   MÓDULO DE SINCRONIZACIÓN DE DRIVE (BACKEND)
+   ================================================================ */
+const SyncDrive = {
+  init() {
+    try {
+      gapi.load('client', async () => {
+        await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+        gapiIniciado = true;
+        
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID, scope: SCOPES, callback: async (resp) => {
+            if (resp.error) return;
+            cuentaConectada = true;
+            localStorage.setItem('drive_conectado', 'true');
+            await SyncDrive.orquestarSincronizacion();
+            App.render();
+          },
+        });
+
+        if (localStorage.getItem('drive_conectado') === 'true') {
+          tokenClient.requestAccessToken({ prompt: '' });
+        }
+      });
+    } catch(e) { console.log("Modo offline nativo"); }
+  },
+
+  async conectar() {
+    if (!gapiIniciado || !tokenClient) return alert('Librerías de Google cargando o credenciales no configuradas.');
+    tokenClient.requestAccessToken({ prompt: 'select_account' });
+  },
+
+  async orquestarSincronizacion() {
+    try {
+      const res = await gapi.client.drive.files.list({ spaces: 'appDataFolder', fields: 'files(id, name)' });
+      const archivo = res.result.files.find(f => f.name === 'enfoque_datos.json');
+
+      if (!archivo) {
+        await SyncDrive.subirDatos();
+      } else {
+        googleFileId = archivo.id;
+        const contenido = await gapi.client.drive.files.get({ fileId: googleFileId, alt: 'media' });
+        const nubeDb = contenido.result;
+        
+        if (nubeDb && nubeDb.ultimaMod > Datos.get().ultimaMod) {
+          Datos.setTodo(nubeDb);
+        } else {
+          await SyncDrive.subirDatos();
+        }
+      }
+    } catch (err) { console.error("Error sincronizando", err); }
+  },
+
+  async subirDatos() {
+    if (!cuentaConectada) return;
+    const metadata = { name: 'enfoque_datos.json', parents: ['appDataFolder'] };
+    const datosStr = JSON.stringify(Datos.get());
+    
+    try {
+      if (!googleFileId) {
+        const res = await gapi.client.drive.files.create({ resource: metadata, media: { mimeType: 'application/json', body: datosStr }, fields: 'id' });
+        googleFileId = res.result.id;
+      } else {
+        await gapi.client.drive.files.update({ fileId: googleFileId, media: { mimeType: 'application/json', body: datosStr } });
+      }
+    } catch(e) { console.error("Error al respaldar en la nube", e); }
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => { setTimeout(SyncDrive.init, 1000); });
+
+/* ================================================================
+   UTILIDADES DE FECHA
+   ================================================================ */
+const Fechas = {
+  soloFecha(d = new Date()) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  },
+  hoy() { return Fechas.soloFecha(); },
+  inicioSemana(d = new Date()) {
+    const base = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dia = base.getDay();
+    const resta = dia === 0 ? 6 : dia - 1;
+    base.setDate(base.getDate() - resta);
+    return base;
+  },
+  finSemana(d = new Date()) {
+    const f = Fechas.inicioSemana(d); f.setDate(f.getDate() + 6); return f;
+  },
+  fechaStr(date) { return Fechas.soloFecha(date); },
+  diasTranscurridos() {
+    const l = Fechas.inicioSemana(); const h = new Date();
+    return Math.floor((new Date(h.getFullYear(),h.getMonth(),h.getDate()) - l) / 86400000) + 1;
+  },
+  DIAS: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],
+  MESES: ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],
+  encabezadoHoy() {
+    const d = new Date();
+    return Fechas.DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' +
+      ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][d.getMonth()];
+  },
+  rangoSemana() {
+    const l = Fechas.inicioSemana(), f = Fechas.finSemana();
+    return l.getDate() + ' – ' + f.getDate() + ' de ' + Fechas.MESES[f.getMonth()];
+  }
+};
+
+/* ================================================================
+   REPOSITORIOS
+   ================================================================ */
+const Repo = {
+  tareasHoy(filtroLista) {
+    const hoy = Fechas.hoy();
+    let r = Datos.get().tareas.filter(t => t.horizonte === 0 && t.fecha === hoy);
+    if (filtroLista) r = r.filter(t => t.listaId === filtroLista);
+    return Repo._ordenar(r);
+  },
+  tareasSemana() {
+    const l = Fechas.fechaStr(Fechas.inicioSemana());
+    const f = Fechas.fechaStr(Fechas.finSemana());
+    const r = Datos.get().tareas.filter(t => t.horizonte === 1 && t.fecha >= l && t.fecha <= f);
+    return Repo._ordenar(r);
+  },
+  _ordenar(arr) {
+    return arr.sort((a, b) => (a.completada - b.completada) || (b.prioridad - a.prioridad) || (a.id - b.id));
+  },
+  agregarTarea(titulo, { prioridad = 1, horizonte = 0, listaId = null } = {}) {
+    const fecha = horizonte === 0 ? Fechas.hoy() : Fechas.fechaStr(Fechas.inicioSemana());
+    Datos.get().tareas.push({ id: Datos.nuevoId(), titulo, listaId, prioridad, horizonte, fecha, completada: false, completadaEn: null });
+    Datos.guardar();
+  },
+  alternarTarea(id) {
+    const t = Datos.get().tareas.find(x => x.id === id); if (!t) return;
+    t.completada = !t.completada; t.completadaEn = t.completada ? new Date().toISOString() : null;
+    Datos.guardar();
+  },
+  ciclarPrioridad(id) {
+    const t = Datos.get().tareas.find(x => x.id === id); if (!t) return;
+    t.prioridad = (t.prioridad + 1) % 3;
+    Datos.guardar();
+  },
+  habitos() { return [...Datos.get().habitos].sort((a,b)=>a.orden-b.orden); },
+  registroDe(habitoId, fecha) { return Datos.get().registros.find(r => r.habitoId === habitoId && r.fecha === fecha); },
+  cumplidoHoy(habitoId) { const r = Repo.registroDe(habitoId, Fechas.hoy()); return !!(r && r.cumplido); },
+  alternarHabito(habitoId) {
+    const hoy = Fechas.hoy(); let r = Repo.registroDe(habitoId, hoy);
+    if (r) { r.cumplido = !r.cumplido; } else { Datos.get().registros.push({ habitoId, fecha: hoy, cumplido: true }); }
+    Datos.guardar();
+  },
+  racha(habitoId) {
+    const cumplidos = new Set(Datos.get().registros.filter(r => r.habitoId === habitoId && r.cumplido).map(r => r.fecha));
+    let d = new Date(); if (!cumplidos.has(Fechas.soloFecha(d))) d.setDate(d.getDate() - 1);
+    let racha = 0; while (cumplidos.has(Fechas.soloFecha(d))) { racha++; d.setDate(d.getDate() - 1); }
+    return racha;
+  },
+  NOMBRES_APRENDER: ['IA','Dinero / Habilidades','Auto','Música'],
+  listasAprender() {
+    const orden = Repo.NOMBRES_APRENDER;
+    return Datos.get().listas.filter(l => orden.includes(l.nombre)).sort((a,b) => orden.indexOf(a.nombre) - orden.indexOf(b.nombre));
+  },
+  itemsDe(listaId) { return Datos.get().items.filter(i => i.listaId === listaId).sort((a,b) => (a.completado - b.completado) || (a.id - b.id)); },
+  agregarItem(listaId, titulo) { Datos.get().items.push({ id: Datos.nuevoId(), listaId, titulo, completado: false }); Datos.guardar(); },
+  alternarItem(id) { const i = Datos.get().items.find(x => x.id === id); if (i) { i.completado = !i.completado; Datos.guardar(); } },
+  resumenSemana() {
+    const l = Fechas.fechaStr(Fechas.inicioSemana()); const f = Fechas.fechaStr(Fechas.finSemana());
+    const tareas = Datos.get().tareas.filter(t => t.fecha >= l && t.fecha <= f);
+    const completadas = tareas.filter(t => t.completada).length;
+    const habitos = Repo.habitos(); const regs = Datos.get().registros.filter(r => r.fecha >= l && r.fecha <= f && r.cumplido);
+    const dias = Math.min(Math.max(Fechas.diasTranscurridos(), 1), 7);
+    const posibles = habitos.length * dias; const pct = posibles === 0 ? 0 : regs.length / posibles;
+    const rachaMax = habitos.reduce((m, h) => Math.max(m, Repo.racha(h.id)), 0);
+    return { completadas, totales: tareas.length, pct, rachaMax };
+  },
+  reflexion() { const k = Fechas.fechaStr(Fechas.inicioSemana()); return Datos.get().reflexiones[k] || ''; },
+  guardarReflexion(texto) { const k = Fechas.fechaStr(Fechas.inicioSemana()); Datos.get().reflexiones[k] = texto; Datos.guardar(); }
+};
+
+/* ================================================================
+   UI E INTERFAZ DE NAVEGACIÓN
+   ================================================================ */
+const App = (() => {
+  let tab = 'hoy'; let filtroHoy = null; let listaAprender = null; let debounceReflexion = null;
+  const SVG_CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';
+
+  function esc(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function nombreLista(id){ const l = Datos.get().listas.find(x=>x.id===id); return l ? l.nombre : ''; }
+
+  function irA(nuevo) {
+    tab = nuevo;
+    document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('activo', b.dataset.tab === nuevo));
+    document.getElementById('fab').classList.toggle('oculto', !['hoy','semana','aprender'].includes(nuevo));
+    render();
+  }
+
+  function render() {
+    const v = document.getElementById('vista');
+    if (tab === 'hoy') v.innerHTML = vistaHoy();
+    else if (tab === 'semana') v.innerHTML = vistaSemana();
+    else if (tab === 'habitos') v.innerHTML = vistaHabitos();
+    else if (tab === 'aprender') v.innerHTML = vistaAprender();
+    else if (tab === 'revision') { v.innerHTML = vistaRevision(); cablearReflexion(); }
+  }
+
+  function vistaHoy() {
+    const tareas = Repo.tareasHoy(filtroHoy);
+    const listasConTareas = [...new Set(Datos.get().tareas.filter(t=>t.horizonte===0 && t.fecha===Fechas.hoy()).map(t=>t.listaId).filter(Boolean))];
+    let chips = `<div class="chips" style="margin-top:16px"><div class="chip ${filtroHoy===null?'activo':''}" onclick="App.filtrar(null)">Todas</div>`;
+    listasConTareas.forEach(id => { chips += `<div class="chip ${filtroHoy===id?'activo':''}" onclick="App.filtrar(${id})">${esc(nombreLista(id))}</div>`; });
+    chips += `</div>`;
+    let lista = tareas.map(filaTarea).join('');
+    if (!tareas.length) lista = `<div class="vacio">Sin tareas hoy.<br>Toca + para empezar.</div>`;
+    return `<p class="subtitulo">${Fechas.encabezadoHoy()}</p><h1 class="titulo-seccion">Hoy</h1>${listasConTareas.length ? chips : ''}<div style="margin-top:20px">${lista}</div>`;
+  }
+
+  function filaTarea(t) {
+    return `<div class="tarjeta ${t.completada?'completada':''}">
+      <div class="punto p${t.prioridad}" onclick="App.ciclarPrio(${t.id})"></div>
+      <div class="titulo-tarea">${esc(t.titulo)} ${t.listaId ? `<div class="etiqueta-lista">${esc(nombreLista(t.listaId))}</div>` : ''}</div>
+      <div class="check ${t.completada?'on':''}" onclick="App.completar(${t.id})">${SVG_CHECK}</div>
+    </div>`;
+  }
+
+  function vistaSemana() {
+    const metas = Repo.tareasSemana(); const hechas = metas.filter(m=>m.completada).length;
+    const pct = metas.length ? Math.round(hechas/metas.length*100) : 0;
+    let lista = metas.map(filaTarea).join('');
+    if (!metas.length) lista = `<div class="vacio">Sin metas esta semana.<br>Toca + para fijar una.</div>`;
+    return `<p class="subtitulo">${Fechas.rangoSemana()}</p><h1 class="titulo-seccion">Esta semana</h1><div style="margin-top:20px"><div class="barra"><div style="width:${pct}%"></div></div><div class="barra-texto">${hechas}/${metas.length} completadas</div></div><p class="etiqueta-grupo">Metas</p>${lista}`;
+  }
+
+  function vistaHabitos() {
+    const habitos = Repo.habitos(); const hechos = habitos.filter(h => Repo.cumplidoHoy(h.id)).length;
+    const pct = habitos.length ? Math.round(hechos/habitos.length*100) : 0;
+    const filas = habitos.map(h => {
+      const on = Repo.cumplidoHoy(h.id); const r = Repo.racha(h.id);
+      return `<div class="fila-habito ${on?'on':''}" onclick="App.marcarHabito(${h.id})"><div class="check grande ${on?'on':''}">${SVG_CHECK}</div><div class="nombre-habito">${esc(h.nombre)}</div>${r>=2 ? `<div class="racha">🔥 ${r}</div>` : ''}</div>`;
+    }).join('');
+    return `<h1 class="titulo-seccion">Hábitos</h1><p class="subtitulo">${Fechas.encabezadoHoy()}</p><div style="margin-top:20px"><div class="barra"><div style="width:${pct}%"></div></div><div class="barra-texto">${hechos} de ${habitos.length} hoy</div></div><div style="margin-top:16px">${filas}</div>`;
+  }
+
+  function vistaAprender() {
+    const listas = Repo.listasAprender(); if (listaAprender === null && listas.length) listaAprender = listas[0].id;
+    const chips = listas.map(l => `<div class="chip ${l.id===listaAprender?'activo':''}" onclick="App.elegirLista(${l.id})">${esc(l.nombre)}</div>`).join('');
+    const items = Repo.itemsDe(listaAprender);
+    let lista = items.map(i => `<div class="tarjeta ${i.completado?'completada':''}" style="cursor:pointer" onclick="App.completarItem(${i.id})"><div class="check ${i.completado?'on':''}">${SVG_CHECK}</div><div class="titulo-tarea" style="font-size:16px">${esc(i.titulo)}</div></div>`).join('');
+    if (!items.length) lista = `<div class="vacio">Lista vacía.<br>Toca + para añadir algo que aprender.</div>`;
+    return `<h1 class="titulo-seccion">Aprender</h1><div class="chips" style="margin-top:20px">${chips}</div><div style="margin-top:20px">${lista}</div>`;
+  }
+
+  function vistaRevision() {
+    const r = Repo.resumenSemana(); const pctH = Math.round(r.pct*100);
+    let cierre = r.pct >= 0.8 ? 'Semana sólida. Vas firme. 🌱' : r.pct >= 0.4 ? 'Buen avance. Sigue así. 🌱' : 'Cada semana es un nuevo comienzo. 🌱';
+    
+    let btnTexto = cuentaConectada ? "Google Drive Conectado 🌱" : "Conectar Google Drive";
+    let btnClase = cuentaConectada ? "btn-drive conectado" : "btn-drive";
+
+    return `<h1 class="titulo-seccion">Revisión</h1><p class="subtitulo">${Fechas.rangoSemana()}</p>
+      <button class="${btnClase}" onclick="SyncDrive.conectar()">${btnTexto}</button>
+      <div style="margin-top:16px">
+        <div class="metrica"><span class="et">Tareas completadas</span><span class="val">${r.completadas}/${r.totales}</span></div>
+        <div class="metrica"><span class="et">Hábitos cumplidos</span><span class="val">${pctH}%</span></div>
+        <div class="metrica"><span class="et">Racha más larga</span><span class="val">${r.rachaMax>=1?'🔥 '+r.rachaMax:'—'}</span></div>
+      </div>
+      <div class="mensaje-cierre">${cierre}</div><p class="etiqueta-grupo">¿Qué te bloqueó esta semana?</p><textarea class="reflexion" id="reflexion" placeholder="Escribe libremente…"></textarea>`;
+  }
+
+  function cablearReflexion() {
+    const ta = document.getElementById('reflexion'); if (!ta) return;
+    ta.value = Repo.reflexion();
+    ta.addEventListener('input', () => { clearTimeout(debounceReflexion); debounceReflexion = setTimeout(() => Repo.guardarReflexion(ta.value), 600); });
+  }
+
+  /* Interacciones básicas */
+  function completar(id) { Repo.alternarTarea(id); render(); }
+  function ciclarPrio(id) { Repo.ciclarPrioridad(id); render(); }
+  function filtrar(id) { filtroHoy = id; render(); }
+  function marcarHabito(id) { if (navigator.vibrate) navigator.vibrate(10); Repo.alternarHabito(id); render(); }
+  function elegirLista(id) { listaAprender = id; render(); }
+  function completarItem(id) { Repo.alternarItem(id); render(); }
+
+  let prioElegida = 1;
+  function abrirAgregar() {
+    prioElegida = 1; const sel = document.getElementById('prioSelect');
+    sel.innerHTML = [0,1,2].map(p => `<div class="punto p${p} ${p===1?'sel':''}" data-p="${p}" onclick="App.elegirPrio(${p})"></div>`).join('');
+    const input = document.getElementById('inputAgregar'); input.value = '';
+    input.placeholder = tab==='semana' ? '¿Qué quieres lograr?' : tab==='aprender' ? '¿Qué quieres aprender?' : '¿Qué tienes que hacer hoy?';
+    sel.style.visibility = tab==='aprender' ? 'hidden' : 'visible';
+    document.getElementById('overlay').classList.add('abierto'); setTimeout(() => input.focus(), 50);
+  }
+  function elegirPrio(p) { prioElegida = p; document.querySelectorAll('#prioSelect .punto').forEach(el => el.classList.toggle('sel', +el.dataset.p === p)); }
+  function guardar() {
+    const input = document.getElementById('inputAgregar'); const txt = input.value.trim(); if (!txt) return;
+    if (tab === 'aprender') Repo.agregarItem(listaAprender, txt);
+    else if (tab === 'semana') Repo.agregarTarea(txt, { prioridad: prioElegida, horizonte: 1 });
+    else Repo.agregarTarea(txt, { prioridad: prioElegida, horizonte: 0 });
+    cerrar(); render();
+  }
+  function cerrar() { document.getElementById('overlay').classList.remove('abierto'); }
+  function cerrarSiFuera(e) { if (e.target.id === 'overlay') cerrar(); }
+
+  function init() {
+    document.getElementById('btnAgregar').onclick = guardar;
+    document.getElementById('inputAgregar').addEventListener('keydown', e => { if (e.key === 'Enter') guardar(); if (e.key === 'Escape') cerrar(); });
+    irA('hoy');
+  }
+
+  return { irA, init, render, completar, ciclarPrio, filtrar, marcarHabito, elegirLista, completarItem, abrirAgregar, elegirPrio, guardar, cerrar, cerrarSiFuera };
+})();
+
+App.init();
+</script>
+</body>
+</html>
